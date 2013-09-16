@@ -276,4 +276,215 @@ describe("Backbone.Module.js", function(){
         })
     });
 
+    describe("cid", function(){
+        it("can be generated when the model created", function(){
+            var model = new Backbone.Model({});
+            expect(model.cid).not.toBeUndefined();
+        });
+
+        it("is a unique id automatically", function(){
+            var model1 = new Backbone.Model();
+            var model2 = new Backbone.Model();
+            expect(model1.cid).not.toEqual(model2.cid);
+        });
+    });
+
+    describe("attributes", function(){
+        var obj, model = new Backbone.Model({
+            id : 1,
+            name : "model",
+            title : "temp model"
+        });
+
+        it("contains all the model initial data", function(){
+            obj = _.clone(model.attributes);
+            expect(obj.id).toEqual(1);
+            expect(obj.name).toEqual("model");
+            expect(obj.title).toEqual("temp model");
+        });
+
+        it("contains all the value be set", function(){
+            model.set("country", "US");
+            model.set("language", "EN");
+            obj = _.clone(model.attributes);
+            expect(obj.country).toEqual("US");
+            expect(obj.language).toEqual("EN");
+        });
+    });
+
+    describe("changed", function(){
+       var model;
+        beforeEach(function(){
+            model = new Backbone.Model({
+                name : "model",
+                age : 18
+            });
+        });
+
+        it("is {} if no 'change' happened", function(){
+            expect(model.changed).toEqual({});
+        });
+
+        it("contains all the attributes that have changed since the last 'change' event", function(){
+            model.set("name", "Jasmine");
+            model.set("version", "2.0.0-rc2");
+            expect(model.changed.name).not.toEqual("Jasmine");
+            expect(model.changed.version).toEqual("2.0.0-rc2");
+        });
+
+        it("will not contains the attributes changed not by 'set'", function(){
+            model.attributes["name"] = "Jasmine.js";
+            expect(model.get("name")).toEqual("Jasmine.js");
+            expect(model.changed).toEqual({});
+        });
+    });
+
+    describe("hasChanged", function(){
+        var model;
+        beforeEach(function(){
+            model = new Backbone.Model({
+                name : "model",
+                nameChanged : false,
+                age : 18,
+                ageChanged : false
+            });
+
+            model.on("change", function(){
+                if (model.hasChanged("name")){
+                    model.set("nameChanged", true);
+                }
+                if(model.hasChanged("age")) {
+                    model.set("ageChanged", true);
+                }
+            });
+        });
+
+        it("returns false if no changes happen", function(){
+            expect(model.hasChanged()).toBeFalsy();
+        });
+
+        it("returns true if changes happen", function(){
+            model.set("name", "new name");
+            expect(model.hasChanged()).toBeTruthy();
+        });
+
+        it("used to detect if an attribute was changed since the last change", function(){
+            model.set("name", "new name");
+            expect(model.get("nameChanged")).toBeTruthy();
+            expect(model.get("ageChanged")).toBeFalsy();
+            model.set("age", 20);
+            expect(model.get("ageChanged")).toBeTruthy();
+        });
+
+        it("used to detect if multiple attributes were changed since the last change", function(){
+            model.set({name : "new name", age : 20});
+            expect(model.get("nameChanged")).toBeTruthy();
+            expect(model.get("ageChanged")).toBeTruthy();
+        });
+
+        it("works outside of change events if an attribute was changed", function(){
+            model.set("name", "new name");
+            expect(model.hasChanged("name")).toBeTruthy();
+            expect(model.hasChanged("age")).toBeFalsy();
+
+            model.set("age", 20);
+            expect(model.hasChanged("age")).toBeTruthy();
+            model.set("age", 20);
+            expect(model.hasChanged("age")).toBeFalsy();
+        });
+
+        it("works outside since the last change event for an attribute", function(){
+            model.set("name", "new name");
+            model.set("age", 20);
+            expect(model.hasChanged("name")).toBeFalsy();
+            expect(model.hasChanged("age")).toBeTruthy();
+            model.set("age", 20);
+            expect(model.hasChanged("age")).toBeFalsy();
+        });
+
+        it("works outside since the last change event for multiple atrributes", function(){
+            model.set({name : "new name", age : 20});
+            expect(model.hasChanged("name")).toBeTruthy();
+            expect(model.hasChanged("age")).toBeTruthy();
+            model.set({name : "new name", age : 20});
+            expect(model.hasChanged("name")).toBeFalsy();
+            expect(model.hasChanged("age")).toBeFalsy();
+        });
+    });
+
+    describe("changedAttributes", function(){
+        var model, changedObj;
+        beforeEach(function(){
+            model = new Backbone.Model({
+                name : "model",
+                age : 18
+            });
+        });
+
+        it("is false if there're none attributes changed", function(){
+            changedObj = model.changedAttributes();
+            expect(changedObj).toBeFalsy();
+        });
+
+        it("contains changed property if there's attribute changed", function(){
+            model.set("age", 20);
+            changedObj = model.changedAttributes();
+            expect(changedObj["age"]).toEqual(20);
+        });
+
+        it("contains changed propertes if there're attributes changed", function(){
+            model.set({age: 20, name : "new name"});
+            changedObj = model.changedAttributes();
+            expect(changedObj["age"]).toEqual(20);
+            expect(changedObj["name"]).toEqual("new name");
+        });
+
+        it("returns changed attributes obj by comparing with the obj passed", function(){
+            model.set("age", 20);
+            changedObj = model.changedAttributes({age : 20});
+            expect(changedObj).toBeFalsy();
+
+            changedObj = model.changedAttributes({age : 21});
+            expect(changedObj["age"]).toEqual(21);
+        });
+
+        it("returns changed attributes obj by comparing with the obj passed", function(){
+            model.set({age: 20, name : "new name"});
+            changedObj = model.changedAttributes({age : 20});
+            expect(changedObj).toBeFalsy();
+
+            changedObj = model.changedAttributes({age : 21, name : "new name"});
+            expect(changedObj["age"]).toEqual(21);
+            expect(changedObj["name"]).toBeUndefined();
+        });
+
+        it("contains unset properties", function(){
+            model.unset("age");
+            changedObj = model.changedAttributes({age : 20});
+            expect(changedObj["age"]).toEqual(20);
+        });
+    });
+
+    describe("previous", function(){
+        var model, changedObj;
+        beforeEach(function(){
+            model = new Backbone.Model({
+                name : "model",
+                age : 18
+            });
+        });
+
+        it("can be used to get previous value of a changed value", function(){
+            model.set("name", "new name");
+            expect(model.previous("name")).toEqual("model");
+        });
+
+        it("can be used to get previous value of an attribute just for the last 'change' event", function(){
+            model.set("name", "new name");
+            model.set("age", 20);
+            // it's not equal to the previous value but the latest one.
+            expect(model.previous("name")).not.toEqual("model");
+            expect(model.previous("age")).toEqual(18);
+        });
+    });
 });
