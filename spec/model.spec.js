@@ -487,4 +487,80 @@ describe("Backbone.Module.js", function(){
             expect(model.previous("age")).toEqual(18);
         });
     });
+
+    describe("previousAttributes", function(){
+        var model;
+        beforeEach(function(){
+            model = new Backbone.Model({
+                name : "model",
+                age : 18
+            });
+        });
+
+        it("can be used to get all of previous attributes before last changed event", function(){
+            model.set("name", "new name");
+            expect(model.previousAttributes()).toEqual({name:"model", age: 18});
+        });
+
+        it("can be used to get all of previous attributes just for the last  'change' event", function(){
+            model.set("name", "new name");
+            model.set("age", 20);
+            expect(model.previousAttributes()).toEqual({name: "new name", age: 18});
+        });
+    });
+
+    describe("isNew", function(){
+        var model;
+        beforeEach(function(){
+            model = new Backbone.Model({
+                name : "model",
+                age : 18
+            });
+        });
+
+        it("should be true for a new model", function(){
+            expect(model.isNew()).toEqual(true);
+        });
+
+        it("should be true for a model with ID valude null or undefined", function(){
+            model.set("id", undefined);
+            expect(model.isNew()).toEqual(true);
+
+            model.set("id", null);
+            expect(model.isNew()).toEqual(true);
+        });
+
+        it("should be false for a model with ID valued non-null and non-undefined", function(){
+            model.set("id", 1);
+            expect(model.isNew()).toEqual(false);
+
+            model.set("id", -100);
+            expect(model.isNew()).toEqual(false);
+
+            model.set("id", "test_id");
+            expect(model.isNew()).toEqual(false);
+
+            model.set("id", false);
+            expect(model.isNew()).toEqual(false);
+
+            model.set("id", 0);
+            expect(model.isNew()).toEqual(false);
+        });
+    });
+
+    describe("clone", function(){
+        var a = new Backbone.Model({
+            'foo' : 1,
+            'bar' : 2,
+            'baz' : 3
+        });
+        var b = a.clone();
+
+        it("can be used to get a same instance", function(){
+            expect(a.get('foo')).toEqual(b.get('foo'));
+            expect(a.get('bar')).toEqual(b.get('bar'));
+            expect(a.get('baz')).toEqual(b.get('baz'));
+        });
+    });
+
 });
